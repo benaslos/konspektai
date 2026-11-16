@@ -18,7 +18,7 @@ label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
 <label><input type="checkbox" id="rem" checked> Prisiminti šiame įrenginyje</label>
 <button type="submit">Atidaryti</button><div class="err" id="err"></div></form></div>
 <script>
-const SALT = "960iC0Z0OZdlstOYq+U3lQ==", ITER = 200000;
+const SALT = "A9603pEADfDvceYgsAXffA==", ITER = 200000;
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function derive(pw){
   const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
@@ -30,6 +30,7 @@ async function open_(pw, remember){
   const buf = await (await fetch("app.enc")).arrayBuffer();
   const html = await decWith(key, buf);
   window.__dec = b => decWith(key, b);
+  window.__decb = async b => { const u = new Uint8Array(b); return await crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(0, 12) }, key, u.slice(12)); };
   try { if (remember) localStorage.setItem("smk-pw", pw); } catch (e) {}
   const doc = document.open("text/html", "replace");
   doc.write('<!doctype html><html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow"><style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style></head><body>' + html + '</body></html>');
