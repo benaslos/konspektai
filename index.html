@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><title>Šeimos medicinos konspektai</title>
+<meta name="theme-color" content="#0d6b57">
+<style>
+:root{--bg:#f3f6f4;--paper:#fff;--ink:#15231e;--muted:#5b6b64;--line:#d5dfda;--accent:#0d6b57;--red:#b42318}
+@media (prefers-color-scheme: dark){:root{--bg:#0f1714;--paper:#16211d;--ink:#e4ede9;--muted:#97a8a1;--line:#2a3a34;--accent:#5cc7a8;--red:#ff8a7a;color-scheme:dark}}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+#gate{min-height:100vh;display:grid;place-items:center;padding:16px;box-sizing:border-box}
+form{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:24px;width:min(360px,100%);display:grid;gap:12px}
+h1{font-size:22px;margin:0} p{margin:0;color:var(--muted);font-size:13px}
+input[type=password]{font:16px system-ui;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{font:600 15px system-ui;padding:10px;border-radius:8px;border:0;background:var(--accent);color:var(--paper);cursor:pointer}
+label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center} .err{color:var(--red);font-size:13px;min-height:1em}
+</style></head><body>
+<div id="gate"><form id="f"><h1>Šeimos medicinos konspektai</h1><p>Įvesk slaptažodį.</p>
+<input type="password" id="pw" autocomplete="current-password" aria-label="Slaptažodis" autofocus>
+<label><input type="checkbox" id="rem" checked> Prisiminti šiame įrenginyje</label>
+<button type="submit">Atidaryti</button><div class="err" id="err"></div></form></div>
+<script>
+const SALT = "xzbRLiQoFk52mkNYpXxNww==", ITER = 200000;
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function derive(pw){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(SALT), iterations: ITER, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+}
+async function decWith(key, buf){ const u = new Uint8Array(buf); const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: u.slice(0, 12) }, key, u.slice(12)); return new TextDecoder().decode(pt); }
+async function open_(pw, remember){
+  const key = await derive(pw);
+  const buf = await (await fetch("app.enc")).arrayBuffer();
+  const html = await decWith(key, buf);
+  window.__dec = b => decWith(key, b);
+  try { if (remember) localStorage.setItem("smk-pw", pw); } catch (e) {}
+  const doc = document.open("text/html", "replace");
+  doc.write('<!doctype html><html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow"><style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style></head><body>' + html + '</body></html>');
+  doc.close();
+}
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault(); const err = document.getElementById("err"); err.textContent = "Tikrinama…";
+  try { await open_(document.getElementById("pw").value, document.getElementById("rem").checked); }
+  catch (x) { err.textContent = "Neteisingas slaptažodis."; }
+});
+(async () => { let pw = null; try { pw = localStorage.getItem("smk-pw"); } catch (e) {} if (pw) { try { await open_(pw, true); } catch (e) { try { localStorage.removeItem("smk-pw"); } catch (x) {} } } })();
+</script></body></html>
