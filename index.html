@@ -2,6 +2,7 @@
 <html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow"><title>Šeimos medicinos konspektai</title>
 <meta name="theme-color" content="#0d6b57">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ŠG konspektai">
 <style>
 :root{--bg:#f3f6f4;--paper:#fff;--ink:#15231e;--muted:#5b6b64;--line:#d5dfda;--accent:#0d6b57;--red:#b42318}
 @media (prefers-color-scheme: dark){:root{--bg:#0f1714;--paper:#16211d;--ink:#e4ede9;--muted:#97a8a1;--line:#2a3a34;--accent:#5cc7a8;--red:#ff8a7a;color-scheme:dark}}
@@ -18,7 +19,8 @@ label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
 <label><input type="checkbox" id="rem" checked> Prisiminti šiame įrenginyje</label>
 <button type="submit">Atidaryti</button><div class="err" id="err"></div></form></div>
 <script>
-const SALT = "gO3d+tCoUp9Kjj+2dPoLKw==", ITER = 200000;
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+const SALT = "tyL2ALFF8junPskMJteGug==", ITER = 200000;
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function derive(pw){
   const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
